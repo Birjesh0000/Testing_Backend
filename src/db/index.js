@@ -10,4 +10,4 @@ export const connectDB = async () => {  /// use of async await bcz db is in anot
         console.log("thers is connection error", error);
         process.exit(1);// exit the process if there is error
     }
-};
+}
