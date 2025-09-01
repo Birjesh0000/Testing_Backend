@@ -43,16 +43,26 @@
  * }));
  */
 
-const AsyncHandler = (fn) => async (req, res, next) => {
-    try {
-        // Run the passed async function (controller)
-        await fn(req, res, next);
-    } catch (error) {
-        // If error occurs → send response (basic handling)
-        // In advanced setups, we might call `next(error)` instead 
-        // so that centralized error middleware can handle it.
-        res.send({ error: error.message });
+
+//1st Method :-
+// const AsyncHandler = (fn) => async (req, res, next) => {
+//     try {
+//         // Run the passed async function (controller)
+//         await fn(req, res, next);
+//     } catch (error) {
+//         // If error occurs → send response (basic handling)
+//         // In advanced setups, we might call `next(error)` instead 
+//         // so that centralized error middleware can handle it.
+//         res.send({ error: error.message });
+//     }
+// };
+
+
+//2nd Method :- to handle both sync and async errors
+const AsyncHandler = (requesHandler) => {
+    return (req, res, next) => {
+        Promise.resolve(requesHandler(req, res, next)).catch((err) => next(err));
     }
-};
+}
 
 export { AsyncHandler };

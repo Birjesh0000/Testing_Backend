@@ -17,4 +17,13 @@ app.use(express.urlencoded({extended : true})); // to parse urlencoded data, (e.
 app.use(express.static('public')); // to serve static files (e.g., images, CSS, uploads) from "public" folder
 app.use(cookieParser()); // to parse cookies sent by the client
 
+
+
+// import routes
+import userRoutes from "./routes/user.routes.js";
+
+// Use routes
+app.use("/api/v1/user", userRoutes); // All user-related routes will be prefixed with /api/v1/user
+
+
 export {app}; // Export app for use in index.js
