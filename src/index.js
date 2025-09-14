@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./db/index.js";
 import {app} from "./app.js";
 
-dotenv.config({path: './env'}); // to use env file
+dotenv.config({path: './.env'}); // to use env file
 
 connectDB() // calling the function to connect to database, it is a async function, returns a promise
 .then(() => {

@@ -13,7 +13,7 @@ import multer from "multer";
  *   - The file will be saved with its original name (as sent from client)
  */
 
-// Configure storage engine for multer
+// multer.diskStorage() is a Multer storage engine that tells Multer to store uploaded files on the server's disk.
 const storage = multer.diskStorage({
 
     // Destination (where to store uploaded files temporarily)

@@ -16,7 +16,7 @@ cloudinary.config({
  * Flow:
  * 1. Take local file path (uploaded using multer)
  * 2. Upload it to Cloudinary
- * 3. On success → return Cloudinary response
+ * 3. On success → return Cloudinary response & delete local file to free storage & return null
  * 4. On failure → delete local file to free storage & return null
  */
 const uploadToCloudinary = async (localFilePath) => {
@@ -32,7 +32,7 @@ const uploadToCloudinary = async (localFilePath) => {
         fs.unlinkSync(localFilePath);
 
         // If upload success
-        console.log("✅ File uploaded to Cloudinary:", response.url);
+        console.log("File uploaded to Cloudinary:", response.url);
         return response;
     } catch (error) {
         // If upload fails → delete local file to avoid storage bloat

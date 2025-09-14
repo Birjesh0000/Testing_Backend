@@ -54,7 +54,7 @@ userSchema.preHook("Save", async function(next) {
 });
 
 userSchema.methods.isPasswordMatch = async function(enteredPassword) {  // this method will be used to compare the password entered by user with the hashed password in database
-    return await bcrypt.compare(enteredPassword, this.password);
+    return await bcrypt.compare(enteredPassword, this.password); // this.password refers to the hashed password in database
 };
 
 userModel.methods.generateAccessToken = function(){ // this method will be used to generate access token
@@ -72,7 +72,7 @@ userModel.methods.generateAccessToken = function(){ // this method will be used 
     );
 }
 
-userModel.meothods.generateRefreshToken = function(){ // this method will be used to generate refresh token
+userModel.methods.generateRefreshToken = function(){ // this method will be used to generate refresh token
     return jwt.sign(
         {
             _id: this.id // this only id will be stored in refresh token, no need to store other details, bcz refresh token is used to generate new access token

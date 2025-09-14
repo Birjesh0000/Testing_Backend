@@ -5,6 +5,30 @@ import {uploadToCloudinary} from "../utils/Cloudinary.js";
 import {ApiResponse} from "../utils/ApiResponse.js";
 
 
+// function to generate access token and refresh token
+// this function will be used in login and register user and many other places
+const generateAccessAndRefreshToken = async(userId) => {
+    try{
+        const user = await User.findById(userId);
+        if(!user){
+            throw new ApiError(404, "User not found");
+        }
+
+        const refreshToken = user.generateRefreshToken(); // method from user model to generate refresh token
+        const accessToken = user.generateAccessToken(); // method from user model to generate access token
+        
+        // store refresh token in database
+        user.refreshToken = refreshToken;
+        await user.save({validateBeforeSave: false}); // disable validation before save, bcz we are only updating refresh token field
+
+        return {accessToken, refreshToken}; // return both tokens as object to the caller
+    }
+    catch{
+        throw new ApiError(500, "Failed to generate access and refresh token");
+    }
+}
+
+/// register user controller
 const registerUser = AsyncHandler(async (req, res) => {
     // Extract user details from request body
     //perform validation
@@ -83,4 +107,95 @@ const registerUser = AsyncHandler(async (req, res) => {
 
 });
 
-export {registerUser};
+
+// login user controller
+const loginUser = AsyncHandler(async (req, res) => {
+    // extract email and password from req.body
+    // perform validation
+    // check if user exists (username or email based account) in the database
+    // check if password is correct
+    // generate access token and refresh token
+    // send cookies in httpOnly mode
+    // send response to client
+
+    const {email, userName, password} = req.body; // assuming login can be done using either email or username
+    
+    if(!userName && !email){ /// at least one of them should be present for login
+        throw new ApiError(400, "Username or email is required to login");
+    }
+
+    const user = await User.findOne({  /// find user by email or username in database
+        $or: [{email}, {userName}]
+    });
+
+    if(!user){
+        throw new ApiError(404, "User not found with this email or username");
+    }
+
+    // user is the instance of User model, so we can use the methods defined in the model
+    // like isPasswordMatch, generateAccessToken, generateRefreshToken
+    const isPasswordValid = await user.isPasswordMatch(password); // method from user model to compare password
+
+    if(!isPasswordValid){
+        throw new ApiError(401, "Invalid password");
+    }
+
+    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id) // function to generate both tokens and store refresh token in database
+
+    // here we take user details except password and refresh token to send in response
+    const userResponse = await User.findById(user._id). // find user by id, this is db call
+    select("-password -refreshToken -__v -createdAt -updatedAt");
+
+    // send httpOnly cookie to client
+    const options = {
+        httpOnly: true,
+        secure : true // set to true if using https
+    }
+
+    // send response to client with cookies
+    return res.status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(200, "User logged in successfully", {user: userResponse, accessToken, refreshToken}));// in this step, user send token from their side
+    
+});
+
+
+// logout user controller can be added here
+const logOutUser = AsyncHandler(async (req, res) => {
+    /// user is not accessible here directly, so we need to get user details from auth middleware
+    // we have attached user details to req.user in auth middleware, here we can use it to get user id
+    // bcz we need to remove refresh token from database for that user
+
+
+    // Steps : -
+    // get user id from req.user (set by auth middleware)
+    // remove refresh token from database
+    // clear cookies from client side
+    // send response to client
+
+    await User.findByIdAndUpdate( /// remove refresh token from database for that user
+        req.user._id,
+        {
+            $set : {refreshToken: undefined} // remove refresh token from database
+        },
+        {
+            new: true // return the updated document
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure : true, // set to true if using https
+        expires: new Date(0) // set cookie expiry to past date to clear it from client side
+    }
+
+    // send response to client with cookies cleared
+    return res.status(200)
+    .clearCookie("accessToken", options) // clear access token cookie from client side
+    .clearCookie("refreshToken", options) // clear refresh token cookie from client side
+    .json(new ApiResponse(200, {}, "User logged out successfully")); // send response to client
+
+}); 
+
+export {registerUser, loginUser, logOutUser};
