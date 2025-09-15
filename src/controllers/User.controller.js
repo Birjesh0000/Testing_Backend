@@ -246,4 +246,107 @@ const refreshAccessToken = AsyncHandler(async (req, res) => {
 });
 
 
-export {registerUser, loginUser, logOutUser, refreshAccessToken};
+/// change user password controller can be added here
+const changeUserPassword = AsyncHandler(async (req, res) => {
+    // get user id from req.user (set by auth middleware)
+    // extract old password and new password from req.body
+    // hash new password
+    // update password in database
+    // send response to client
+
+    const {oldPassword, newPassword} = req.body; // extract old password and new password from req.body
+
+    if(!oldPassword || !newPassword){
+        throw new ApiError(400, "Old password and new password are required");
+    }
+
+    const user = await User.findById(req.user._id); // find user by id from req.user
+    if(!user){
+        throw new ApiError(404, "User not found");
+    }
+
+    // check if old password is correct, by the method from user model to compare password
+    const isPasswordValid = await user.isPasswordMatch(oldPassword); // method from user model to compare password
+    if(!isPasswordValid){
+        throw new ApiError(401, "Old password is incorrect");
+    }
+
+    // check methods from user model to hash password
+    user.password = newPassword; // set new password, it will be hashed in pre-save hook of User model
+    await user.save({validateBeforeSave: false}); // save the user with new password
+
+    return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully")); // send response to client
+});
+
+/// get user profile controller can be added here, this is used to get user profile details
+const getUserProfile = AsyncHandler(async (req, res) => {
+    return res.status(200).json(new ApiResponse(200, req.user, "User profile fetched successfully")); // req.user is set by auth middleware
+});
+
+// similarly, update user profile controller can be added here
+const updateUserProfile = AsyncHandler(async (req, res) => {
+    // get user id from req.user (set by auth middleware)
+    // extract user details from req.body
+    // update user details in database
+    // send response to client
+    const {fullName, email} = req.body; // extract user details from req.body
+
+    if(!fullName || !email){
+        throw new ApiError(400, "Full name and email are required");
+    }
+
+    // this step gives updated user details after updating in database
+    const updatedUser = await User.findByIdAndUpdate( // update user details in database
+        req.user._id,
+        {
+            $set: {fullName, email}
+        },
+        {
+            new: true // return the updated document
+        }
+    ).select("-password -refreshToken -__v -createdAt -updatedAt"); // exclude sensitive fields from response
+
+    return res.status(200).json(new ApiResponse(200, updatedUser, "User profile updated successfully"));
+
+});
+
+// updare user avatar controller can be added here
+const updateUserAvatar = AsyncHandler(async (req, res) => {
+    // get user id from req.user (set by auth middleware)
+    // extract avatar image from req.files (handled by multer middleware)
+    // upload avatar to cloudinary
+    // update avatar url in database
+    // send response to client
+
+    const avatarLocalPath = req.file?.path; // get the path of uploaded avatar image, uploaded by multer middleware
+
+    if(!avatarLocalPath){
+        throw new ApiError(400, "Avatar image is required to update");
+    }
+
+    // this give url of uploaded avatar image on cloudinary
+    const avatarImage = await uploadToCloudinary(avatarLocalPath); // upload avatar to cloudinary
+    if(!avatarImage){
+        throw new ApiError(500, "Failed to upload avatar to cloudinary");
+    }
+
+    // thi step gives updated user details after updating in database
+    const user = await User.findByIdAndUpdate( // update avatar url in database
+        req.user._id,
+        {
+            $set: {avatar: avatarImage.url}
+        },
+        {
+            new: true // return the updated document
+        }
+    ).select("-password -refreshToken -__v -createdAt -updatedAt"); // exclude sensitive fields from response
+
+    return res.status(200).json(new ApiResponse(200, user, "Avatar updated successfully"));
+})
+
+// similarly, update cover image controller can be added here
+
+
+
+// export all controller functions, so that they can be used in routes files
+export {registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getUserProfile, updateUserProfile, updateUserAvatar};
