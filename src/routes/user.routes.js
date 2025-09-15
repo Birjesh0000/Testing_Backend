@@ -1,5 +1,5 @@
 import {Router} from "express";
-import { loginUser, logOutUser, registerUser } from "../controllers/User.controller.js";
+import { loginUser, logOutUser, registerUser, refreshAccessToken } from "../controllers/User.controller.js";
 import {uplaod} from "../middlewares/multer.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 
@@ -16,7 +16,7 @@ router.route("/register").post(
 );
 
 router.route("/login").post(loginUser);  // login user controller, to authenticate user and generate tokens
-
+router.route("/refresh-token").post(refreshAccessToken); // refresh token controller, to generate new access token using refresh token
 
 // secure route:-
 //  only accessible to authenticated users
