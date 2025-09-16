@@ -28,8 +28,10 @@ router.route("/refresh-token").post(refreshAccessToken); // refresh token contro
 
 
 router.route("/profile").get(jwtAuth, getUserProfile); // getUserProfile is another controller function to get user profile details
-router.route("logout").post(verifyJwt, logOutUser); // logout user controller, to clear the cookies and remove refresh token from database
-
+router.route("/logout").post(verifyJwt, logOutUser); // logout user controller, to clear the cookies and remove refresh token from database
+router.route("/change-password").post(verifyJwt, changePassword); // change password controller, to change the password of the authenticated user
+router.route("/update-profile").patch(verifyJwt, updateUserProfile); // update user profile controller, to update user details
+router.route("/update-avatar").patch(verifyJwt, uplaod.single("avatar"), updateUserAvatar); // update user avatar controller, to update user avatar
 
 
 export default router;
